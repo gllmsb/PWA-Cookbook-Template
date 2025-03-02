@@ -1,36 +1,30 @@
-
-const STATIC_CACHE = "pwa-static-v2";
-const DYNAMIC_CACHE = "pwa-dynamic-v1";
-const CACHE_LIMIT = 50; 
+const STATIC_CACHE = "pwa-static-v4";
+const DYNAMIC_CACHE = "pwa-dynamic-v3";
+const CACHE_LIMIT = 50;
 
 const ASSETS = [
     "/",
     "/index.html",
-    "/css/styles.css",
-    "/js/ui.js",
+    "/css/styles.css",  
+    "/js/ui.js",        
     "/img/dish.png",
     "/img/icons/icon-192x192.png",
-    "/img/icons/icon-512x512.png"
+    "/img/icons/icon-512x512.png",
+    "/pages/fallback.html" 
 ];
 
 self.addEventListener("install", event => {
     console.log("Service Worker: Installing...");
-
     event.waitUntil(
-        caches.open(STATIC_CACHE)
-            .then(cache => {
-                console.log("Caching static assets...");
-                return cache.addAll(ASSETS);
-            })
-            .then(() => {
-                console.log("Static cache completed.");
-            })
+        caches.open(STATIC_CACHE).then(cache => {
+            console.log("Caching static assets...");
+            return cache.addAll(ASSETS);
+        })
     );
 });
 
 self.addEventListener("activate", event => {
     console.log("Service Worker: Activated.");
-
     event.waitUntil(
         caches.keys().then(keys => {
             return Promise.all(
@@ -46,7 +40,7 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
     console.log("Fetching:", event.request.url);
-
+    
     event.respondWith(
         caches.match(event.request).then(response => {
             return response || fetch(event.request).then(fetchRes => {
@@ -57,7 +51,9 @@ self.addEventListener("fetch", event => {
                 });
             });
         }).catch(() => {
-            console.log("Offline: No cached resource found.");
+            if (event.request.mode === "navigate") {
+                return caches.match("/pages/fallback.html");
+            }
         })
     );
 });
